@@ -5,12 +5,14 @@
  *  
  * Kota Miura (miura@embl)
  * http://cmci.embl.de
- * Nov 12, 2012 -
+ * Nov 12, 2012
  */
 
 package emblcmci.scalainterp;
  
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import ij.IJ;
 import common.AbstractInterpreter;
@@ -18,12 +20,16 @@ import scala.Option;
 import scala.collection.immutable.List;
 import scala.tools.nsc.Settings;
 import scala.tools.nsc.interpreter.IMain;
+import scala.collection.JavaConversions;
 
 public class Scala_Interpreter extends AbstractInterpreter{
 
 	IMain imain = null;
 	String varname, vartype, varval, aline;
 	Option<Object> varobj;
+	final ArrayList<String> preimport_list =  
+			new ArrayList<String>(Arrays.asList
+					("ij._", "java.lang.String"));
 	
 	public void run(String args){
 		Thread.currentThread().setContextClassLoader(IJ.getClassLoader());
@@ -33,6 +39,7 @@ public class Scala_Interpreter extends AbstractInterpreter{
 		prompt.setEnabled(false);
 		PrintStream out = new PrintStream(this.out);
 		System.setOut(out);
+		System.setErr(out);
 		Settings settings = new Settings();
 		//val settings = new Settings; settings.usejavacp.value = true
 		List<String> param = List.make(1, "true");
@@ -42,9 +49,9 @@ public class Scala_Interpreter extends AbstractInterpreter{
 		//import all ImageJ classes, maybe upgrade this later. 
 		//using IMain.quiteImport() should be faster
 		//instead of importAll();
-		//preimport();
+		preimport();
 		prompt.setEnabled(true);
-		println("Ready.");
+		println("ij package is imported. Ready.");
 	}
 	/**
 	 * evaluates Scala commands. 
@@ -80,21 +87,22 @@ public class Scala_Interpreter extends AbstractInterpreter{
 	}
 
 
-    /** pre-imports ImageJ and Java classes.
+    /** 
      * Work around of AbstractInterpreter.importAll()
      */
 	public void preimport() {
-		final String[] importstatements = {
-	            "ij._", "java.lang.String", "script.imglib.math.Compute"
-	        };
-		for (String statement : importstatements){
-			try {
-				eval("import " + statement);
-			} catch (Throwable e) {
-				IJ.log("Failed importing " + statement);
-				e.printStackTrace();
-			}
-		}
+		imain.quietImport(JavaConversions.asScalaBuffer(preimport_list).toList());
+//		final String[] importstatements = {
+//	            "ij._", "java.lang.String", "script.imglib.math.Compute"
+//	        };
+//		for (String statement : importstatements){
+//			try {
+//				eval("import " + statement);
+//			} catch (Throwable e) {
+//				IJ.log("Failed importing " + statement);
+//				e.printStackTrace();
+//			}
+//		}
 	}
 
 	@Override
