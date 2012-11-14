@@ -10,7 +10,8 @@
 
 package emblcmci.scalainterp;
  
-import java.io.PrintWriter;
+import java.io.PrintStream;
+
 import ij.IJ;
 import common.AbstractInterpreter;
 import scala.Option;
@@ -27,19 +28,21 @@ public class Scala_Interpreter extends AbstractInterpreter{
 	public void run(String args){
 		Thread.currentThread().setContextClassLoader(IJ.getClassLoader());
 		super.run(args);
-		setTitle("Scala Interpreter");
+		super.setTitle("Scala Interpreter");
 		println("Starting Scala...");
 		prompt.setEnabled(false);
+		PrintStream out = new PrintStream(this.out);
+		System.setOut(out);
 		Settings settings = new Settings();
 		//val settings = new Settings; settings.usejavacp.value = true
 		List<String> param = List.make(1, "true");
 		settings.usejavacp().tryToSet(param);
-		PrintWriter stream = new PrintWriter(this.out);
-		imain = new IMain(settings, stream);
+		imain = new IMain(settings, print_out);
+		//imain = new IMain(settings);
 		//import all ImageJ classes, maybe upgrade this later. 
 		//using IMain.quiteImport() should be faster
 		//instead of importAll();
-		preimport();
+		//preimport();
 		prompt.setEnabled(true);
 		println("Ready.");
 	}
@@ -50,16 +53,10 @@ public class Scala_Interpreter extends AbstractInterpreter{
 	@Override
 	protected Object eval(String arg0) throws Throwable {
 		imain.interpret(arg0);
+		//List<Name> lines = imain.visibleTermNames();
 		varname = imain.mostRecentVar();
 		varobj = imain.valueOfTerm(varname);
-		if (varobj.toList().size()>0){
-			varval = imain.valueOfTerm(varname).productElement(0).toString();
-			vartype = imain.valueOfTerm(varname).productElement(0).getClass().getSimpleName();
-			aline = varname + ": " + vartype + " = " + varval;
-		} else{
-			aline = varname + ": None";
-		}
-		return aline;
+		return null;
 	}
 
 	/**
